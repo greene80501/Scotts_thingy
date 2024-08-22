@@ -91,6 +91,7 @@ def type_menu():
                     main()
 
 def lev_class():
+    global student_gone
     input_box = pygame.Rect(WINDOW_WIDTH // 2 - INPUT_BOX_WIDTH // 2, WINDOW_HEIGHT // 2 - INPUT_BOX_HEIGHT // 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT)
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
@@ -124,7 +125,7 @@ def lev_class():
                             error_message = "Invalid PIN length! Must be 6 digits."
                         elif text not in df['ID'].astype(str).values:
                             error_message = "PIN not found in the list!"
-                        elif text in student_gone:
+                        elif int(text) in student_gone:
                             error_message = "This student is currently out."
                         else:
                             running = False  # Exit the loop if the PIN is valid
@@ -134,12 +135,13 @@ def lev_class():
                             start_time = datetime.now()
                             barcode = idToBarcodeConverter(student_id)
                             print(print_pass(student_id, student_name))
-                            student_gone = {
-                                'id' : student_id,
+                            
+                            # Update the student_gone dictionary
+                            student_gone[student_id] = {
                                 'name': student_name,
                                 'start_time': start_time
                             }
-                            print(f"Student left the class at: {start_time.hour}/{start_time.minute}")
+                            print(f"Student left the class at: {start_time.hour}:{start_time.minute}")
                             print(student_gone)
                             draw_pass(student_id, student_name, barcode)
                     elif event.key == pygame.K_BACKSPACE:
@@ -161,6 +163,7 @@ def lev_class():
         pygame.display.flip()
 
 def return_class():
+    global student_gone
     input_box = pygame.Rect(WINDOW_WIDTH // 2 - INPUT_BOX_WIDTH // 2, WINDOW_HEIGHT // 2 - INPUT_BOX_HEIGHT // 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT)
 
     color_inactive = pygame.Color('lightskyblue3')
@@ -191,16 +194,15 @@ def return_class():
             if event.type == pygame.KEYDOWN:
                 if active:
                     if event.key == pygame.K_RETURN:
+                        student_id = int(text)
                         if len(text) != 6:
                             error_message = "Invalid PIN length! Must be 6 digits."
-                        if text not in df['ID'].astype(str).values:
+                        elif text not in df['ID'].astype(str).values:
                             error_message = "PIN not found in the list!"
-                        if text != student_gone[text]:
-                            print(student_gone[text])
+                        elif student_id not in student_gone:
                             error_message = "Student is not currently out."
                         else:
                             running = False  # Exit the loop if the PIN is valid
-                            student_id = int(text)
                             end_time = datetime.now()
                             start_time = student_gone[student_id]['start_time']
                             time_gone = end_time - start_time
@@ -213,9 +215,6 @@ def return_class():
                             print(f"Time gone: {new_total_minutes_out:.2f} minutes")
 
                             student_gone.pop(student_id)
-                            student_info = df[df['ID'] == student_id]
-                            student_name = f"{student_info[' First Name'].values[0]} {student_info[' Last Name'].values[0]}"
-                            barcode = idToBarcodeConverter(student_id)
                             main()
                     elif event.key == pygame.K_BACKSPACE:
                         text = text[:-1]
@@ -232,7 +231,7 @@ def return_class():
             error_surface = font.render(error_message, True, pygame.Color('red'))
             screen.blit(error_surface, (input_box.x, input_box.y + INPUT_BOX_HEIGHT + 10))
         home_button = draw_home_button()
-        
+
         pygame.display.flip()
 
 
